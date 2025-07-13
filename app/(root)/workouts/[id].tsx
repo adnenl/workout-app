@@ -1,11 +1,13 @@
 import { getWorkoutById } from '@/actions/workoutActions';
+import ExerciseCard from '@/components/ExerciseCard';
 import { Workout } from '@/types/workout';
+import { WorkoutExercise } from '@/types/workoutExercise';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 
 const WorkoutDetails = () => {
-  const router = useRouter(); // Hook for navigation
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [workout, setWorkout] = useState<Workout | null>(null);
@@ -64,7 +66,7 @@ const WorkoutDetails = () => {
       <View className="p-5">
         {/* Back Button */}
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={() => router.push('/')}
           className="mb-6 self-start"
         >
           <Text className="text-blue-500 text-lg font-semibold">
@@ -84,7 +86,36 @@ const WorkoutDetails = () => {
                 day: 'numeric',
               })}
             </Text>
-            {/* You can add more details here, like the list of exercises */}
+            <View className="mt-4">
+              <Text className="text-lg font-semibold text-gray-800 mb-2">
+                Exercises:
+              </Text>
+              {workout.workoutExercises && workout.workoutExercises.length > 0 ? (
+                workout.workoutExercises.map((we: WorkoutExercise) => (
+                  <ExerciseCard
+                    key={we.$id}
+                    name={we.exercise?.name ?? ''}
+                    sets={we.sets}
+                  />
+                ))
+              ) : (
+                <Text className="text-gray-500">No exercises found.</Text>
+              )}
+
+              <TouchableOpacity>
+                <Text
+                  className="mt-4 bg-blue-500 py-3 px-4 rounded-lg items-center"
+                  onPress={() =>
+                    router.push({
+                      pathname: `/workouts/selectMuscle`,
+                      params: { workoutId: workout.$id },
+                    })
+                  }
+                >
+                  Add Exercise
+                </Text>
+              </TouchableOpacity>
+            </View>
           </>
         ) : (
           <Text className="text-gray-500 text-lg">No workout details found.</Text>
@@ -92,6 +123,6 @@ const WorkoutDetails = () => {
       </View>
     </SafeAreaView>
   );
-}
+};
 
 export default WorkoutDetails;

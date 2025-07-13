@@ -4,9 +4,10 @@ import { config, databases } from "./appwrite";
 const COLLECTIONS = {
     EXERCISES: config.exercisesCollectionId,
     WORKOUTS: config.workoutsCollectionId,
-}
+    WORKOUT_EXERCISES: config.workoutExercisesCollectionId, // Add this!
+};
 
-const muscleGroups = [
+export const muscleGroups = [
   "Chest",
   "Back",
   "Legs",
@@ -14,44 +15,23 @@ const muscleGroups = [
   "Biceps",
   "Triceps",
 ];
- 
+
 const exercises = [
-  {
-    name: "Bench Press",
-    muscleGroup: muscleGroups[0],
-  },
-  {
-    name: "Squat",
-    muscleGroup: muscleGroups[2],
-  },
-  {
-    name: "Deadlift",
-    muscleGroup: muscleGroups[1],
-  },
-  {
-    name: "Pull Up",
-    muscleGroup: muscleGroups[1],
-  },
-  {
-    name: "Push Up",
-    muscleGroup: muscleGroups[0],
-  },
+  { name: "Bench Press", muscleGroup: muscleGroups[0] },
+  { name: "Squat", muscleGroup: muscleGroups[2] },
+  { name: "Deadlift", muscleGroup: muscleGroups[1] },
+  { name: "Pull Up", muscleGroup: muscleGroups[1] },
+  { name: "Push Up", muscleGroup: muscleGroups[0] },
 ];
 
 // Helper function to get a random subset of an array
 function getRandomSubset<T>(array: T[], minItems: number, maxItems: number): T[] {
-  if (minItems > maxItems || minItems < 0 || maxItems > array.length) {
-    throw new Error("Invalid min/max item constraints for getRandomSubset.");
-  }
-
   const subsetSize = Math.floor(Math.random() * (maxItems - minItems + 1)) + minItems;
   const arrayCopy = [...array];
-
   for (let i = arrayCopy.length - 1; i > 0; i--) {
     const randomIndex = Math.floor(Math.random() * (i + 1));
     [arrayCopy[i], arrayCopy[randomIndex]] = [arrayCopy[randomIndex], arrayCopy[i]];
   }
-
   return arrayCopy.slice(0, subsetSize);
 }
 
@@ -59,7 +39,11 @@ async function seed() {
   try {
     // Clear existing data from all collections, starting with dependent collections
     console.log("Clearing existing data...");
-    const collectionsToClear = [COLLECTIONS.WORKOUTS, COLLECTIONS.EXERCISES];
+    const collectionsToClear = [
+      COLLECTIONS.WORKOUT_EXERCISES,
+      COLLECTIONS.WORKOUTS,
+      COLLECTIONS.EXERCISES,
+    ];
     for (const collectionId of collectionsToClear) {
       if (!collectionId) continue; // Skip if collectionId is not configured
       const documents = await databases.listDocuments(config.databaseId!, collectionId);
@@ -82,25 +66,42 @@ async function seed() {
     }
     console.log(`Seeded ${createdExercises.length} exercises.`);
 
-    // Seed Workouts
+    // Seed Workouts and WorkoutExercises
     const workoutNames = ["Workout 1", "Workout 2", "Workout 3", "Workout 4", "Workout 5"];
     let workoutDate = new Date();
 
     for (const name of workoutNames) {
-      // Assign a random subset of 3 to 5 exercises to this workout
-      const assignedExercises = getRandomSubset(createdExercises, 3, 5);
-
+      // Create the workout
       const workout = await databases.createDocument(
         config.databaseId!,
         COLLECTIONS.WORKOUTS!,
         ID.unique(),
         {
           name,
-          date : workoutDate.toISOString(), // Store date as ISO string
-          // Map the full exercise documents to just their IDs for the relation
-          exercises: assignedExercises.map((exercise) => exercise.$id),
+          date: workoutDate.toISOString(), // Store date as ISO string
         }
       );
+
+      // Assign a random subset of 3 to 5 exercises to this workout
+      const assignedExercises = getRandomSubset(createdExercises, 3, 5);
+
+      // Create WorkoutExercise documents for each assigned exercise
+      for (const exercise of assignedExercises) {
+        await databases.createDocument(
+          config.databaseId!,
+          COLLECTIONS.WORKOUT_EXERCISES!,
+          ID.unique(),
+          {
+            workout: workout.$id,
+            exercise: exercise.$id,
+            sets: [
+              { reps: 10, weight: 50, order: 1 },
+              { reps: 8, weight: 60, order: 2 },
+              { reps: 6, weight: 70, order: 3 },
+            ], // Example sets data
+          }
+        );
+      }
       console.log(`Seeded workout: ${workout.name}`);
     }
 
