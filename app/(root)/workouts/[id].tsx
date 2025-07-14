@@ -1,10 +1,10 @@
-import { getWorkoutById } from '@/actions/workoutActions';
+import { addSet, deleteSet, getWorkoutById, updateWorkoutExercise } from '@/actions/workoutActions';
 import ExerciseCard from '@/components/ExerciseCard';
 import { Workout } from '@/types/workout';
 import { WorkoutExercise } from '@/types/workoutExercise';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 const WorkoutDetails = () => {
   const router = useRouter();
@@ -13,6 +13,44 @@ const WorkoutDetails = () => {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDeleteSet = (setId: string) => {
+    if (!workout) return;
+    const updatedExercises = workout.workoutExercises.map((exercise: WorkoutExercise) => {
+      if (exercise.sets.some(set => set.$id === setId)) {
+        return {
+          ...exercise,
+          sets: exercise.sets.filter(set => set.$id !== setId),
+        };
+      }
+      return exercise;
+    });
+    setWorkout(prev => prev ? { ...prev, workoutExercises: updatedExercises } : null);
+    deleteSet(setId);
+  }
+
+  const handleAddSet = async (workoutExerciseId: string) => {
+    console.log('handleAddSet called for', workoutExerciseId);
+    if (!workout) return;
+    // Optionally, calculate the order as sets.length + 1
+    const exercise = workout.workoutExercises.find(e => e.$id === workoutExerciseId);
+    const order = exercise ? exercise.sets.length : 0;
+
+    // Create set in backend and get the real set object
+    const createdSet = await addSet(workoutExerciseId, 0, 0, order);
+
+    // Update local state with the new set (with correct $id)
+    setWorkout(prev => {
+      if (!prev) return null;
+      const updatedExercises = prev.workoutExercises.map(exercise => {
+        if (exercise.$id === workoutExerciseId) {
+          return { ...exercise, sets: [...exercise.sets, createdSet] };
+        }
+        return exercise;
+      });
+      return { ...prev, workoutExercises: updatedExercises };
+    });
+  }
 
   useEffect(() => {
     if (!id) {
@@ -63,7 +101,7 @@ const WorkoutDetails = () => {
   // Render the workout details once data is available
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="p-5">
+      <ScrollView className="p-5">
         {/* Back Button */}
         <TouchableOpacity
           onPress={() => router.push('/')}
@@ -94,33 +132,53 @@ const WorkoutDetails = () => {
                 workout.workoutExercises.map((we: WorkoutExercise) => (
                   <ExerciseCard
                     key={we.$id}
+                    workoutExerciseId={we.$id}
                     name={we.exercise?.name ?? ''}
                     sets={we.sets}
+                    onSetChange={(index, field, value) => {
+                      const updatedSets = [...we.sets];
+                      if (field === 'reps') {
+                        updatedSets[index].reps = value === '' ? undefined : parseInt(value, 10);
+                      } else if (field === 'weight') {
+                        updatedSets[index].weight = value === '' ? undefined : parseInt(value, 10);
+                      } 
+                      setWorkout(prev => {
+                        if (!prev) return null;
+                        const updatedExercises = prev.workoutExercises.map(exercise => {
+                          if (exercise.$id === we.$id) {
+                            return { ...exercise, sets: updatedSets };
+                          }
+                          return exercise;
+                        });
+                        return { ...prev, workoutExercises: updatedExercises };
+                      });
+                      updateWorkoutExercise(we.$id, updatedSets);
+                    }}
+                    onSetDelete={(setId) => handleDeleteSet(setId)}
+                    onSetAdd={() => handleAddSet(we.$id)}
                   />
                 ))
               ) : (
                 <Text className="text-gray-500">No exercises found.</Text>
               )}
 
-              <TouchableOpacity>
-                <Text
-                  className="mt-4 bg-blue-500 py-3 px-4 rounded-lg items-center"
-                  onPress={() =>
-                    router.push({
-                      pathname: `/workouts/selectMuscle`,
-                      params: { workoutId: workout.$id },
-                    })
-                  }
-                >
-                  Add Exercise
-                </Text>
+              <TouchableOpacity
+                className="mt-4 bg-blue-500 py-3 px-4 rounded-lg items-center"
+                onPress={() =>
+                  router.push({
+                    pathname: `/workouts/selectMuscle`,
+                    params: { workoutId: workout.$id },
+                  })
+                }
+              >
+                <Text className="text-white font-semibold">Add Exercise</Text>
               </TouchableOpacity>
             </View>
           </>
         ) : (
           <Text className="text-gray-500 text-lg">No workout details found.</Text>
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };

@@ -10,6 +10,7 @@ export const config = {
     exercisesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_EXERCISES_COLLECTION_ID,
     workoutsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_WORKOUTS_COLLECTION_ID,
     workoutExercisesCollectionId: process.env.EXPO_PUBLIC_APPWRITE_WORKOUTEXERCISES_COLLECTION_ID,
+    setsCollectionId: process.env.EXPO_PUBLIC_APPWRITE_SETS_COLLECTION_ID, // Add this!
 }
 
 export const client = new Client();

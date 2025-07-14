@@ -1,5 +1,5 @@
 import { getExercisesByMuscle } from '@/actions/exerciseActions';
-import { addWorkoutToExercise } from '@/actions/workoutActions';
+import { addExerciseToWorkout } from '@/actions/workoutActions';
 import { Exercise } from '@/types/exercise';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -16,7 +16,7 @@ const SelectExercise = () => {
       console.error("Workout ID is missing.");
       return;
     }
-    addWorkoutToExercise(workoutId, exerciseId);
+    addExerciseToWorkout(workoutId, exerciseId);
   };
 
   useEffect(() => {

@@ -1,4 +1,5 @@
-import { databases } from "@/lib/appwrite";
+import { config, databases } from "@/lib/appwrite";
+import { Set } from "@/types/set";
 import { Workout } from "@/types/workout";
 import { ID } from "react-native-appwrite";
 
@@ -68,7 +69,7 @@ export async function getAllWorkouts(): Promise<Workout[]> {
     }
 }
 
-export async function addWorkoutToExercise(workout: string, exercise: string): Promise<void> {
+export async function addExerciseToWorkout(workout: string, exercise: string): Promise<void> {
     try {
         await databases.createDocument(
             process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
@@ -83,4 +84,62 @@ export async function addWorkoutToExercise(workout: string, exercise: string): P
         console.error(`Failed to add exercise ${exercise} to workout ${workout}:`, error);
         throw new Error("Could not add exercise to the workout.");
     }
+}
+
+export async function updateWorkoutExercise(
+    workoutExerciseId: string,
+    sets: Set[]
+): Promise<void> {
+    try {
+        await databases.updateDocument(
+            process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
+            process.env.EXPO_PUBLIC_APPWRITE_WORKOUTEXERCISES_COLLECTION_ID!,
+            workoutExerciseId,
+            { sets }
+        );
+    } catch (error) {
+        console.error(`Failed to update workout exercise ${workoutExerciseId}:`, error);
+        throw new Error("Could not update the workout exercise.");
+    }
+}
+
+export async function deleteSet(setId: string): Promise<void> {
+    try {
+        await databases.deleteDocument(
+            process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
+            process.env.EXPO_PUBLIC_APPWRITE_SETS_COLLECTION_ID!,
+            setId
+        );
+    } catch (error) {
+        console.error(`Failed to delete set ${setId}:`, error);
+        throw new Error("Could not delete the set.");
+    }
+}
+
+export async function addSet(
+  workoutExercise: string,
+  reps: number = 0,
+  weight: number = 0,
+  order: number = 0
+): Promise<Set> {
+  try {
+    console.log('addSet called', workoutExercise, reps, weight, order);
+    const newSet = {
+      workoutExercise,
+      reps,
+      weight,
+      order,
+    };
+    const created = await databases.createDocument(
+      config.databaseId!,
+      config.setsCollectionId!,
+      ID.unique(),
+      newSet
+    );
+    console.log(`Set created with ID: ${created.$id}`);
+    return created as Set;
+  } catch (error) {
+    console.error('addSet error:', error);
+    throw new Error("Could not add the set.");
+  }
 }
