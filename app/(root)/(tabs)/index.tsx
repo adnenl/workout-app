@@ -44,7 +44,6 @@ export default function Index() {
     router.push('/workouts/create');
   };
 
-  // The render function now expects a PopulatedWorkout and can display exercise details
   const renderWorkoutItem = ({ item }: { item: Workout }) => (
     <TouchableOpacity
       className="bg-white p-4 mb-3 rounded-lg border border-gray-200 shadow-sm"
@@ -60,15 +59,15 @@ export default function Index() {
         <View className="mt-3 pt-3 border-t border-gray-100">
           <Text className="text-sm font-semibold text-gray-600 mb-2">Exercises:</Text>
           {item.workoutExercises.map((workoutExercise: WorkoutExercise) => (
-        <View key={workoutExercise.$id} className="ml-2 mb-2 flex-row items-center">
-          <View className="w-2 h-2 rounded-full bg-blue-500 mr-2" />
-          <Text className="text-sm text-gray-700 font-medium">
-            {workoutExercise.exercise.name}
-          </Text>
-          <Text className="text-xs text-gray-500 ml-auto">
-            {workoutExercise.sets.length} {workoutExercise.sets.length === 1 ? 'set' : 'sets'}
-          </Text>
-        </View>
+            <View key={workoutExercise.$id} className="ml-1 mb-2 flex-row items-center">
+              <Text className="text-gray-400 mr-1.5">•</Text>
+              <Text className="text-sm text-gray-700 font-medium">
+                {workoutExercise.exercise.name}
+              </Text>
+              <Text className="text-xs text-gray-500 ml-auto">
+                {workoutExercise.sets.length} {workoutExercise.sets.length === 1 ? 'set' : 'sets'}
+              </Text>
+            </View>
           ))}
         </View>
       )}

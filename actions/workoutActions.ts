@@ -1,7 +1,7 @@
 import { config, databases } from "@/lib/appwrite";
 import { Set } from "@/types/set";
 import { Workout } from "@/types/workout";
-import { ID } from "react-native-appwrite";
+import { ID, Query } from "react-native-appwrite";
 
 interface WorkoutFormData {
   name: string;
@@ -60,7 +60,10 @@ export async function getAllWorkouts(): Promise<Workout[]> {
     try {
         const response = await databases.listDocuments(
             process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
-            process.env.EXPO_PUBLIC_APPWRITE_WORKOUTS_COLLECTION_ID!
+            process.env.EXPO_PUBLIC_APPWRITE_WORKOUTS_COLLECTION_ID!,
+            [
+                Query.orderDesc('date')
+            ]
         );
         return response.documents as unknown as Workout[];
     } catch (error) {

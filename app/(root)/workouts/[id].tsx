@@ -147,12 +147,16 @@ const WorkoutDetails = () => {
                     name={we.exercise?.name ?? ''}
                     sets={we.sets}
                     onSetChange={(index, field, value) => {
+
                       const updatedSets = [...we.sets];
+                                 
+
                       if (field === 'reps') {
                         updatedSets[index].reps = value === '' ? undefined : parseInt(value, 10);
                       } else if (field === 'weight') {
                         updatedSets[index].weight = value === '' ? undefined : parseInt(value, 10);
-                      } 
+                      }
+                      
                       setWorkout(prev => {
                         if (!prev) return null;
                         const updatedExercises = prev.workoutExercises.map(exercise => {
