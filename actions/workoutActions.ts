@@ -118,9 +118,9 @@ export async function deleteSet(setId: string): Promise<void> {
 
 export async function addSet(
   workoutExercise: string,
-  reps: number = 0,
-  weight: number = 0,
-  order: number = 0
+  reps: number | undefined = undefined,
+  weight: number | undefined = undefined,
+  order: number | undefined = undefined
 ): Promise<Set> {
   try {
     console.log('addSet called', workoutExercise, reps, weight, order);
@@ -142,4 +142,17 @@ export async function addSet(
     console.error('addSet error:', error);
     throw new Error("Could not add the set.");
   }
+}
+
+export async function deleteWorkout(id: string): Promise<void> {
+    try {
+        await databases.deleteDocument(
+            process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
+            process.env.EXPO_PUBLIC_APPWRITE_WORKOUTS_COLLECTION_ID!,
+            id
+        );
+    } catch (error) {
+        console.error(`Failed to delete workout with id ${id}:`, error);
+        throw new Error("Could not delete the workout.");
+    }
 }

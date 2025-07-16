@@ -1,4 +1,5 @@
 import { createWorkout } from '@/actions/workoutActions';
+import { getWorkoutName } from '@/lib/time-based-names';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -23,14 +24,12 @@ const CreateWorkout = ({ onSubmit }: WorkoutFormProps) => {
   }
 
   async function handleSubmit() {
-    if (!name.trim()) {
-      Alert.alert('Validation Error', 'Please enter a name for the workout.');
-      return;
-    }
+
+    const workoutName = name.trim() || getWorkoutName(date);
 
     setIsSubmitting(true);
 
-    const formData = { name, date };
+    const formData = { name: workoutName, date };
     
     try {
       const newWorkout = await createWorkout(formData);
@@ -47,7 +46,7 @@ const CreateWorkout = ({ onSubmit }: WorkoutFormProps) => {
     }
   }
 
-  const isSubmitDisabled = !name.trim() || isSubmitting;
+  const isSubmitDisabled = isSubmitting;
 
 
   return (
@@ -64,7 +63,7 @@ const CreateWorkout = ({ onSubmit }: WorkoutFormProps) => {
           </Text>
           <TextInput
             className="bg-white border border-gray-300 text-gray-900 text-base rounded-lg p-4"
-            placeholder="e.g., Morning Run"
+            placeholder="Optional: Enter workout name"
             placeholderTextColor="#9CA3AF"
             value={name}
             onChangeText={setName}

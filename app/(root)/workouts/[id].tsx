@@ -1,4 +1,4 @@
-import { addSet, deleteSet, getWorkoutById, updateWorkoutExercise } from '@/actions/workoutActions';
+import { addSet, deleteSet, deleteWorkout, getWorkoutById, updateWorkoutExercise } from '@/actions/workoutActions';
 import ExerciseCard from '@/components/ExerciseCard';
 import { Workout } from '@/types/workout';
 import { WorkoutExercise } from '@/types/workoutExercise';
@@ -37,7 +37,7 @@ const WorkoutDetails = () => {
     const order = exercise ? exercise.sets.length : 0;
 
     // Create set in backend and get the real set object
-    const createdSet = await addSet(workoutExerciseId, 0, 0, order);
+    const createdSet = await addSet(workoutExerciseId, undefined, undefined, order);
 
     // Update local state with the new set (with correct $id)
     setWorkout(prev => {
@@ -51,6 +51,17 @@ const WorkoutDetails = () => {
       return { ...prev, workoutExercises: updatedExercises };
     });
   }
+
+  const handleDeleteWorkout = async () => {
+    if (!id) return;
+    try {
+      await deleteWorkout(id);
+      router.push('/'); // Redirect to the main workouts page
+    } catch (error) {
+      console.error("Failed to delete workout:", error);
+      setError("Could not delete workout. Please try again later.");
+    }
+  };
 
   useEffect(() => {
     if (!id) {
@@ -173,6 +184,14 @@ const WorkoutDetails = () => {
               >
                 <Text className="text-white font-semibold">Add Exercise</Text>
               </TouchableOpacity>
+
+              {/* Delete Workout Button */}
+            <TouchableOpacity
+              className="mt-4 bg-red-500 py-3 px-4 rounded-lg items-center"
+              onPress={handleDeleteWorkout}
+            >
+              <Text className="text-white font-semibold">Delete Workout</Text>
+            </TouchableOpacity>
             </View>
           </>
         ) : (
