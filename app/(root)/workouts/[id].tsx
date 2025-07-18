@@ -1,7 +1,8 @@
-import { addSet, deleteSet, deleteWorkout, getAllWorkoutExercisesWithSets, getLastWorkoutExercise, getWorkoutById, updateWorkoutExercise } from '@/actions/workoutActions';
+import { addSet, deleteSet, deleteWorkout, deleteWorkoutExercise, getLastWorkoutExercise, getWorkoutById, updateWorkoutExercise } from '@/actions/workoutActions';
 import ExerciseCard from '@/components/ExerciseCard';
 import { Workout } from '@/types/workout';
 import { WorkoutExercise } from '@/types/workoutExercise';
+import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -15,28 +16,26 @@ const WorkoutDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastEntries, setLastEntries] = useState<{[key: string]: WorkoutExercise}>({});
   
-  useEffect(() => {
-    if (!id) {
-      setError("Workout ID is missing.");
-      setIsLoading(false);
-      return;
-    }
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchWorkoutDetails = async () => {
+        setIsLoading(true); // Start loading
+        try {
+          const fetchedWorkout = await getWorkoutById(id);
+          setWorkout(fetchedWorkout);
+        } catch (err) {
+          console.error(err);
+          setError("Failed to load workout. It may not exist.");
+        } finally {
+          setIsLoading(false); // Stop loading
+        }
+      };
 
-    const fetchWorkoutDetails = async () => {
-      try {
-        const fetchedWorkout = await getWorkoutById(id);
-        setWorkout(fetchedWorkout);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load workout. It may not exist.");
-      } finally {
-        setIsLoading(false);
+      if (id) {
+        fetchWorkoutDetails();
       }
-    };
-
-    fetchWorkoutDetails();
-    getAllWorkoutExercisesWithSets(id);
-  }, [id]);
+    }, [id])
+  );
 
   // Fetch last entries for all exercises
   useEffect(() => {
@@ -58,14 +57,6 @@ const WorkoutDetails = () => {
           }
         }
       }
-
-      // Safely log the first entry if it exists
-  const firstKey = Object.keys(entries)[0];
-  if (firstKey && entries[firstKey]?.sets?.length > 0) {
-    console.log("First set in first entry:", entries[firstKey].sets[0]);
-  } else {
-    console.log("No last entries found with sets");
-  }
       
       setLastEntries(entries);
       
@@ -73,6 +64,7 @@ const WorkoutDetails = () => {
     
     fetchLastEntries();
   }, [workout]);
+
 
   const handleDeleteSet = (setId: string) => {
     if (!workout) return;
@@ -111,6 +103,18 @@ const WorkoutDetails = () => {
       return { ...prev, workoutExercises: updatedExercises };
     });
   }
+
+  const handleDeleteExercise = async (workoutExerciseId: string) => {
+    if (!workout) return;
+
+    // Remove the exercise from the workout
+    const updatedExercises = workout.workoutExercises.filter(exercise => exercise.$id !== workoutExerciseId);
+    
+    setWorkout(prev => prev ? { ...prev, workoutExercises: updatedExercises } : null);
+    
+    // Delete the exercise from backend
+    await deleteWorkoutExercise(workoutExerciseId);
+  };
 
   const handleDeleteWorkout = async () => {
     if (!id) return;
@@ -186,16 +190,14 @@ const WorkoutDetails = () => {
                     sets={we.sets}
                     lastEntry={we.exercise?.$id ? lastEntries[we.exercise.$id] : null}
                     onSetChange={(index, field, value) => {
-
                       const updatedSets = [...we.sets];
-                                 
 
                       if (field === 'reps') {
                         updatedSets[index].reps = value === '' ? undefined : parseInt(value, 10);
                       } else if (field === 'weight') {
                         updatedSets[index].weight = value === '' ? undefined : parseInt(value, 10);
                       }
-                      
+
                       setWorkout(prev => {
                         if (!prev) return null;
                         const updatedExercises = prev.workoutExercises.map(exercise => {
@@ -210,6 +212,7 @@ const WorkoutDetails = () => {
                     }}
                     onSetDelete={(setId) => handleDeleteSet(setId)}
                     onSetAdd={() => handleAddSet(we.$id)}
+                    onExerciseDelete={() => handleDeleteExercise(we.$id)} // Pass the workout
                   />
                 ))
               ) : (
@@ -229,12 +232,12 @@ const WorkoutDetails = () => {
               </TouchableOpacity>
 
               {/* Delete Workout Button */}
-            <TouchableOpacity
-              className="mt-4 bg-red-500 py-3 px-4 rounded-lg items-center"
-              onPress={handleDeleteWorkout}
-            >
-              <Text className="text-white font-semibold">Delete Workout</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                className="mt-4 bg-red-500 py-3 px-4 rounded-lg items-center"
+                onPress={handleDeleteWorkout}
+              >
+                <Text className="text-white font-semibold">Delete Workout</Text>
+              </TouchableOpacity>
             </View>
           </>
         ) : (

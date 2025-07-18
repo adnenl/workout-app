@@ -1,5 +1,5 @@
 import { getExercisesByMuscle } from '@/actions/exerciseActions';
-import { addExerciseToWorkout } from '@/actions/workoutActions';
+import { addExerciseToWorkout, getWorkoutById } from '@/actions/workoutActions';
 import { Exercise } from '@/types/exercise';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -9,15 +9,30 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const SelectExercise = () => {
   const { muscle, workoutId } = useLocalSearchParams<{ muscle: string, workoutId: string }>();
   const router = useRouter();
+  
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const handleAddExerciseToWorkout = (exerciseId: string) => {
+  const handleAddExerciseToWorkout = async (exerciseId: string) => {
     if (!workoutId) {
       console.error("Workout ID is missing.");
       return;
     }
-    addExerciseToWorkout(workoutId, exerciseId);
+    
+    // Fetch the current workout details
+  const currentWorkout = await getWorkoutById(workoutId);
+
+  // Check if the exercise already exists in the workout
+  const exerciseExists = currentWorkout.workoutExercises.some(
+    (we) => we.exercise?.$id === exerciseId
+  );
+
+  if (exerciseExists) {
+    alert("This exercise is already in the workout.");
+    return;
+  }
+    await addExerciseToWorkout(workoutId, exerciseId);
+    router.push(`/workouts/${workoutId}`);
   };
 
   useEffect(() => {
@@ -63,7 +78,6 @@ const SelectExercise = () => {
               className="bg-white rounded-xl p-5 mb-3 shadow-md border border-gray-100 active:bg-blue-50 flex-row justify-between items-center"
               onPress={() => {
                 handleAddExerciseToWorkout(exercise.$id);
-                router.push(`/workouts/${workoutId}`);
               }}
             >
               <View className="flex-1">

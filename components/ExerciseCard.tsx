@@ -11,6 +11,7 @@ interface ExerciseCardProps {
   onSetChange?: (index: number, field: 'reps' | 'weight', value: string) => void;
   onSetDelete?: (setId: string) => void;
   onSetAdd?: (workoutExerciseId: string) => void;
+  onExerciseDelete?: (workoutExerciseId: string) => void; // New prop for removing the exercise
 }
 
 const ExerciseCard: React.FC<ExerciseCardProps> = ({
@@ -20,10 +21,20 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
   lastEntry,
   onSetChange, 
   onSetDelete, 
-  onSetAdd 
+  onSetAdd,
+  onExerciseDelete,
 }) => (
   <View className="bg-white rounded-lg shadow p-4 mb-3">
-    <Text className="text-lg font-semibold text-gray-900 mb-3">{name}</Text>
+    <View className="flex-row justify-between items-center mb-3">
+      <Text className="text-lg font-semibold text-gray-900">{name}</Text>
+      {/* Remove Exercise Button */}
+      <TouchableOpacity
+        onPress={() => onExerciseDelete && onExerciseDelete(workoutExerciseId)}
+        className="bg-red-100 px-3 py-2 rounded-lg"
+      >
+        <Text className="text-red-600 font-medium">Remove Exercise</Text>
+      </TouchableOpacity>
+    </View>
     <View className="mt-1">
       {sets.map((set, index) => (
         <View key={index} className="flex-row items-center mb-4">
@@ -34,9 +45,11 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
               className="border border-gray-300 rounded-lg px-3 py-2 w-20 text-base text-gray-800"
               keyboardType="numeric"
               value={set.weight?.toString() ?? ''}
-              placeholder={lastEntry && lastEntry.sets && lastEntry.sets.length > index 
-                ? lastEntry.sets[index]?.weight?.toString() || 'Weight'
-                : 'Weight'}
+              placeholder={
+                lastEntry && lastEntry.sets && lastEntry.sets.length > 0
+                  ? lastEntry.sets[0]?.weight?.toString() || 'Weight'
+                  : 'Weight'
+              }
               placeholderTextColor="#9CA3AF"
               onChangeText={value => onSetChange && onSetChange(index, 'weight', value)}
             />
@@ -49,15 +62,16 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
               className="border border-gray-300 rounded-lg px-3 py-2 w-20 text-base text-gray-800"
               keyboardType="numeric"
               value={set.reps?.toString() ?? ''}
-              placeholder={lastEntry && lastEntry.sets && lastEntry.sets.length > index 
-                ? lastEntry.sets[index]?.reps?.toString() || 'Reps'
-                : 'Reps'}
+              placeholder={
+                lastEntry && lastEntry.sets && lastEntry.sets.length > 0
+                  ? lastEntry.sets[0]?.reps?.toString() || 'Reps'
+                  : 'Reps'
+              }
               placeholderTextColor="#9CA3AF" 
               onChangeText={value => onSetChange && onSetChange(index, 'reps', value)}
             />
             <Text className="text-gray-600 ml-2 text-base">reps</Text>
           </View>
-          
           
           {/* Delete Button */}
           <TouchableOpacity 

@@ -73,9 +73,9 @@ export async function getAllWorkouts(): Promise<Workout[]> {
     }
 }
 
-export async function addExerciseToWorkout(workout: string, exercise: string): Promise<void> {
+export async function addExerciseToWorkout(workout: string, exercise: string): Promise<WorkoutExercise> {
     try {
-        await databases.createDocument(
+        const response = await databases.createDocument(
             process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
             process.env.EXPO_PUBLIC_APPWRITE_WORKOUTEXERCISES_COLLECTION_ID!,
             ID.unique(),
@@ -84,6 +84,7 @@ export async function addExerciseToWorkout(workout: string, exercise: string): P
                 exercise,
             }
         );
+        return response.document as unknown as WorkoutExercise;
     } catch (error) {
         console.error(`Failed to add exercise ${exercise} to workout ${workout}:`, error);
         throw new Error("Could not add exercise to the workout.");
@@ -221,5 +222,18 @@ export async function getAllWorkoutExercisesWithSets(workoutId: string): Promise
     } catch (error) {
         console.error(`Failed to fetch all workout exercises for workout ${workoutId}:`, error);
         throw new Error("Could not retrieve workout exercises.");
+    }
+}
+
+export async function deleteWorkoutExercise(workoutExerciseId: string): Promise<void> {
+    try {
+        await databases.deleteDocument(
+            process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
+            process.env.EXPO_PUBLIC_APPWRITE_WORKOUTEXERCISES_COLLECTION_ID!,
+            workoutExerciseId
+        );
+    } catch (error) {
+        console.error(`Failed to delete workout exercise ${workoutExerciseId}:`, error);
+        throw new Error("Could not delete the workout exercise.");
     }
 }
