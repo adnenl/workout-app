@@ -1,6 +1,7 @@
 import { config, databases } from "@/lib/appwrite";
 import { Set } from "@/types/set";
 import { Workout } from "@/types/workout";
+import { WorkoutExercise } from "@/types/workoutExercise";
 import { ID, Query } from "react-native-appwrite";
 
 interface WorkoutFormData {
@@ -157,5 +158,46 @@ export async function deleteWorkout(id: string): Promise<void> {
     } catch (error) {
         console.error(`Failed to delete workout with id ${id}:`, error);
         throw new Error("Could not delete the workout.");
+    }
+}
+
+export async function getLastWorkoutExercise(exerciseId: string): Promise<WorkoutExercise | null> {
+    try {
+        const response = await databases.listDocuments(
+            process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
+            process.env.EXPO_PUBLIC_APPWRITE_WORKOUTEXERCISES_COLLECTION_ID!,
+            [
+                Query.equal('exercise', exerciseId),
+                Query.orderDesc('$createdAt'),
+                Query.limit(1)
+            ]
+        );
+
+        if (response.documents.length > 0) {
+            const lastWorkoutExercise = response.documents[0] as unknown as WorkoutExercise;
+            console.log(`Fetched last workout exercise for ${exerciseId}:`, lastWorkoutExercise);
+
+            console.log(`Sets for last workout exercise ${lastWorkoutExercise.$id}:`, lastWorkoutExercise.sets);
+
+            return lastWorkoutExercise;
+        }
+        return null;
+    } catch (error) {
+        console.error(`Failed to fetch last workout exercise for exercise ${exerciseId}:`, error);
+        return null;
+    }
+}
+        
+export async function getAllWorkoutExercises(workoutId: string): Promise<WorkoutExercise[]> {
+    try {
+        const response = await databases.listDocuments(
+            process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
+            process.env.EXPO_PUBLIC_APPWRITE_WORKOUTEXERCISES_COLLECTION_ID!,
+            [Query.equal('workout', workoutId)]
+        );
+        return response.documents as unknown as WorkoutExercise[];
+    } catch (error) {
+        console.error(`Failed to fetch all workout exercises for workout ${workoutId}:`, error);
+        throw new Error("Could not retrieve workout exercises.");
     }
 }

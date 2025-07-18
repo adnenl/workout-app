@@ -1,4 +1,4 @@
-import { addSet, deleteSet, deleteWorkout, getWorkoutById, updateWorkoutExercise } from '@/actions/workoutActions';
+import { addSet, deleteSet, deleteWorkout, getAllWorkoutExercises, getLastWorkoutExercise, getWorkoutById, updateWorkoutExercise } from '@/actions/workoutActions';
 import ExerciseCard from '@/components/ExerciseCard';
 import { Workout } from '@/types/workout';
 import { WorkoutExercise } from '@/types/workoutExercise';
@@ -13,6 +13,66 @@ const WorkoutDetails = () => {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastEntries, setLastEntries] = useState<{[key: string]: WorkoutExercise}>({});
+  
+  useEffect(() => {
+    if (!id) {
+      setError("Workout ID is missing.");
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchWorkoutDetails = async () => {
+      try {
+        const fetchedWorkout = await getWorkoutById(id);
+        setWorkout(fetchedWorkout);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load workout. It may not exist.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWorkoutDetails();
+    getAllWorkoutExercises(id);
+  }, [id]);
+
+  // Fetch last entries for all exercises
+  useEffect(() => {
+    if (!workout || !workout.workoutExercises) return;
+    
+    const fetchLastEntries = async () => {
+      const entries: {[key: string]: WorkoutExercise} = {};
+      
+      for (const we of workout.workoutExercises) {
+        if (we.exercise?.$id) {
+          try {
+            const lastEntry = await getLastWorkoutExercise(we.exercise.$id);
+            console.log(`Last entry for exercise ${we.exercise.$id}:`, lastEntry?.sets);
+            if (lastEntry && lastEntry.$id !== we.$id) { // Don't use current exercise as "last"
+              entries[we.exercise.$id] = lastEntry;
+            }
+          } catch (error) {
+            console.error(`Failed to fetch last entry for ${we.exercise.$id}:`, error);
+          }
+        }
+      }
+
+      // Safely log the first entry if it exists
+  const firstKey = Object.keys(entries)[0];
+  if (firstKey && entries[firstKey]?.sets?.length > 0) {
+    console.log("First set in first entry:", entries[firstKey].sets[0]);
+  } else {
+    console.log("No last entries found with sets");
+  }
+      
+      setLastEntries(entries);
+      
+    };
+    
+    fetchLastEntries();
+  }, [workout]);
 
   const handleDeleteSet = (setId: string) => {
     if (!workout) return;
@@ -32,7 +92,7 @@ const WorkoutDetails = () => {
   const handleAddSet = async (workoutExerciseId: string) => {
     console.log('handleAddSet called for', workoutExerciseId);
     if (!workout) return;
-    // Optionally, calculate the order as sets.length + 1
+
     const exercise = workout.workoutExercises.find(e => e.$id === workoutExerciseId);
     const order = exercise ? exercise.sets.length : 0;
 
@@ -56,34 +116,12 @@ const WorkoutDetails = () => {
     if (!id) return;
     try {
       await deleteWorkout(id);
-      router.push('/'); // Redirect to the main workouts page
+      router.push('/');
     } catch (error) {
       console.error("Failed to delete workout:", error);
       setError("Could not delete workout. Please try again later.");
     }
   };
-
-  useEffect(() => {
-    if (!id) {
-      setError("Workout ID is missing.");
-      setIsLoading(false);
-      return;
-    }
-
-    const fetchWorkoutDetails = async () => {
-      try {
-        const fetchedWorkout = await getWorkoutById(id);
-        setWorkout(fetchedWorkout);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load workout. It may not exist.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchWorkoutDetails();
-  }, [id]);
 
   // Render a loading indicator while fetching data
   if (isLoading) {
@@ -146,6 +184,7 @@ const WorkoutDetails = () => {
                     workoutExerciseId={we.$id}
                     name={we.exercise?.name ?? ''}
                     sets={we.sets}
+                    lastEntry={we.exercise?.$id ? lastEntries[we.exercise.$id] : null}
                     onSetChange={(index, field, value) => {
 
                       const updatedSets = [...we.sets];

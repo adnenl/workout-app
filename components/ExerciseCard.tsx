@@ -1,4 +1,5 @@
 import { Set } from '@/types/set';
+import { WorkoutExercise } from '@/types/workoutExercise';
 import React from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -6,6 +7,7 @@ interface ExerciseCardProps {
   workoutExerciseId: string;
   name: string;
   sets: Set[];
+  lastEntry?: WorkoutExercise | null; 
   onSetChange?: (index: number, field: 'reps' | 'weight', value: string) => void;
   onSetDelete?: (setId: string) => void;
   onSetAdd?: (workoutExerciseId: string) => void;
@@ -15,6 +17,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
   workoutExerciseId, 
   name, 
   sets, 
+  lastEntry,
   onSetChange, 
   onSetDelete, 
   onSetAdd 
@@ -31,9 +34,10 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
               className="border border-gray-300 rounded-lg px-3 py-2 w-20 text-base text-gray-800"
               keyboardType="numeric"
               value={set.weight?.toString() ?? ''}
-              placeholder="Weight"
+              placeholder={lastEntry && lastEntry.sets && lastEntry.sets.length > index 
+                ? lastEntry.sets[index]?.weight?.toString() || 'Weight'
+                : 'Weight'}
               placeholderTextColor="#9CA3AF"
-              style={{ textAlignVertical: 'center' }}
               onChangeText={value => onSetChange && onSetChange(index, 'weight', value)}
             />
             <Text className="text-gray-600 ml-2 text-base">kg</Text>
@@ -45,9 +49,10 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
               className="border border-gray-300 rounded-lg px-3 py-2 w-20 text-base text-gray-800"
               keyboardType="numeric"
               value={set.reps?.toString() ?? ''}
-              placeholder="Reps"
+              placeholder={lastEntry && lastEntry.sets && lastEntry.sets.length > index 
+                ? lastEntry.sets[index]?.reps?.toString() || 'Reps'
+                : 'Reps'}
               placeholderTextColor="#9CA3AF" 
-              style={{ textAlignVertical: 'center' }}
               onChangeText={value => onSetChange && onSetChange(index, 'reps', value)}
             />
             <Text className="text-gray-600 ml-2 text-base">reps</Text>
@@ -73,6 +78,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
       >
         <Text className="text-white font-semibold text-base">+ Add Set</Text>
       </TouchableOpacity>
+      
     </View>
   </View>
 );
