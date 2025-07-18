@@ -1,4 +1,4 @@
-import { addSet, deleteSet, deleteWorkout, getAllWorkoutExercises, getLastWorkoutExercise, getWorkoutById, updateWorkoutExercise } from '@/actions/workoutActions';
+import { addSet, deleteSet, deleteWorkout, getAllWorkoutExercisesWithSets, getLastWorkoutExercise, getWorkoutById, updateWorkoutExercise } from '@/actions/workoutActions';
 import ExerciseCard from '@/components/ExerciseCard';
 import { Workout } from '@/types/workout';
 import { WorkoutExercise } from '@/types/workoutExercise';
@@ -35,7 +35,7 @@ const WorkoutDetails = () => {
     };
 
     fetchWorkoutDetails();
-    getAllWorkoutExercises(id);
+    getAllWorkoutExercisesWithSets(id);
   }, [id]);
 
   // Fetch last entries for all exercises

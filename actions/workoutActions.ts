@@ -161,6 +161,20 @@ export async function deleteWorkout(id: string): Promise<void> {
     }
 }
 
+export async function getSetsForWorkoutExercise(workoutExerciseId: string): Promise<Set[]> {
+    try {
+        const response = await databases.listDocuments(
+            config.databaseId!,
+            config.setsCollectionId!,
+            [Query.equal('workoutExercise', workoutExerciseId)]
+        );
+        return response.documents as unknown as Set[];
+    } catch (error) {
+        console.error(`Failed to fetch sets for workout exercise ${workoutExerciseId}:`, error);
+        throw new Error("Could not retrieve sets.");
+    }
+}
+
 export async function getLastWorkoutExercise(exerciseId: string): Promise<WorkoutExercise | null> {
     try {
         const response = await databases.listDocuments(
@@ -175,9 +189,10 @@ export async function getLastWorkoutExercise(exerciseId: string): Promise<Workou
 
         if (response.documents.length > 0) {
             const lastWorkoutExercise = response.documents[0] as unknown as WorkoutExercise;
-            console.log(`Fetched last workout exercise for ${exerciseId}:`, lastWorkoutExercise);
-
-            console.log(`Sets for last workout exercise ${lastWorkoutExercise.$id}:`, lastWorkoutExercise.sets);
+            
+            // Fetch associated sets
+            const sets = await getSetsForWorkoutExercise(lastWorkoutExercise.$id);
+            lastWorkoutExercise.sets = sets; // Attach sets to the workoutExercise
 
             return lastWorkoutExercise;
         }
@@ -188,14 +203,21 @@ export async function getLastWorkoutExercise(exerciseId: string): Promise<Workou
     }
 }
         
-export async function getAllWorkoutExercises(workoutId: string): Promise<WorkoutExercise[]> {
+export async function getAllWorkoutExercisesWithSets(workoutId: string): Promise<WorkoutExercise[]> {
     try {
         const response = await databases.listDocuments(
             process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!,
             process.env.EXPO_PUBLIC_APPWRITE_WORKOUTEXERCISES_COLLECTION_ID!,
             [Query.equal('workout', workoutId)]
         );
-        return response.documents as unknown as WorkoutExercise[];
+        const workoutExercises = response.documents as unknown as WorkoutExercise[];
+
+        // Fetch sets for each workout exercise
+        for (const we of workoutExercises) {
+            we.sets = await getSetsForWorkoutExercise(we.$id);
+        }
+
+        return workoutExercises;
     } catch (error) {
         console.error(`Failed to fetch all workout exercises for workout ${workoutId}:`, error);
         throw new Error("Could not retrieve workout exercises.");
